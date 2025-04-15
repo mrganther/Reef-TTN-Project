@@ -1,5 +1,14 @@
 // server.js
 
+require("dotenv").config();
+
+const TTN_CONFIG = {
+  region: process.env.TTN_REGION,
+  applicationId: process.env.TTN_APP_ID,
+  apiKey: process.env.TTN_API_KEY,
+  deviceId: process.env.TTN_DEVICE_ID || "",
+};
+
 const express = require("express");
 const http = require("http");
 const WebSocket = require("ws");
