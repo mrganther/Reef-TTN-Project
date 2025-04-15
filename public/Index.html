@@ -1,0 +1,341 @@
+<!-- public/index.html -->
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TTN MQTT Data Display</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 20px;
+        background-color: #f5f5f5;
+      }
+      .container {
+        max-width: 800px;
+        margin: 0 auto;
+        background-color: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+      h1 {
+        color: #333;
+        text-align: center;
+      }
+      .connection-status {
+        display: flex;
+        align-items: center;
+        margin-bottom: 20px;
+      }
+      .status-indicator {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background-color: #ff3b30;
+        margin-right: 8px;
+      }
+      .connected {
+        background-color: #34c759;
+      }
+      .status-text {
+        font-weight: bold;
+      }
+      .settings {
+        background-color: #f0f0f0;
+        padding: 15px;
+        border-radius: 5px;
+        margin-bottom: 20px;
+      }
+      .form-group {
+        margin-bottom: 10px;
+      }
+      label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+      }
+      input,
+      select {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        box-sizing: border-box;
+      }
+      button {
+        background-color: #0070c9;
+        color: white;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: bold;
+      }
+      button:hover {
+        background-color: #005bab;
+      }
+      .data-container {
+        margin-top: 20px;
+      }
+      pre {
+        background-color: #f0f0f0;
+        padding: 15px;
+        border-radius: 5px;
+        overflow-x: auto;
+        white-space: pre-wrap;
+      }
+      .message-list {
+        max-height: 300px;
+        overflow-y: auto;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        margin-top: 20px;
+      }
+      .message-item {
+        padding: 10px;
+        border-bottom: 1px solid #ddd;
+      }
+      .message-item:last-child {
+        border-bottom: none;
+      }
+      .timestamp {
+        color: #666;
+        font-size: 0.8em;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>TTN MQTT Data Display</h1>
+
+      <div class="connection-status">
+        <div id="statusIndicator" class="status-indicator"></div>
+        <span id="statusText" class="status-text">Disconnected</span>
+      </div>
+
+      <div class="settings">
+        <div class="form-group">
+          <label for="region">TTN Region:</label>
+          <select id="region">
+            <option value="eu1">Europe 1 (eu1.cloud.thethings.network)</option>
+            <option value="nam1">
+              North America 1 (nam1.cloud.thethings.network)
+            </option>
+            <option value="au1">
+              Australia 1 (au1.cloud.thethings.network)
+            </option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="applicationId">Application ID:</label>
+          <input
+            type="text"
+            id="applicationId"
+            placeholder="your-application-id"
+          />
+        </div>
+        <div class="form-group">
+          <label for="deviceId">Device ID (optional):</label>
+          <input type="text" id="deviceId" placeholder="your-device-id" />
+        </div>
+        <div class="form-group">
+          <label for="apiKey">API Key:</label>
+          <input type="password" id="apiKey" placeholder="NNSXS.XXXXXXX" />
+        </div>
+        <button id="connectButton">Connect</button>
+        <button id="disconnectButton" disabled>Disconnect</button>
+      </div>
+
+      <div class="data-container">
+        <h2>Latest Data</h2>
+        <pre id="latestData">No data received yet.</pre>
+
+        <h2>Message History</h2>
+        <div id="messageList" class="message-list"></div>
+      </div>
+    </div>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const statusIndicator = document.getElementById("statusIndicator");
+        const statusText = document.getElementById("statusText");
+        const connectButton = document.getElementById("connectButton");
+        const disconnectButton = document.getElementById("disconnectButton");
+        const latestData = document.getElementById("latestData");
+        const messageList = document.getElementById("messageList");
+
+        let ws = null;
+        const messageHistory = [];
+        const MAX_MESSAGES = 50;
+
+        connectButton.addEventListener("click", connect);
+        disconnectButton.addEventListener("click", disconnect);
+
+        function connect() {
+          const region = document.getElementById("region").value;
+          const applicationId = document.getElementById("applicationId").value;
+          const deviceId = document.getElementById("deviceId").value;
+          const apiKey = document.getElementById("apiKey").value;
+
+          // Validate inputs
+          if (!applicationId || !apiKey) {
+            alert("Please provide Application ID and API Key");
+            return;
+          }
+
+          // Update UI to connecting state
+          statusText.innerText = "Connecting...";
+
+          try {
+            // Create WebSocket connection
+            const protocol =
+              window.location.protocol === "https:" ? "wss:" : "ws:";
+            const wsUrl = `${protocol}//${window.location.host}`;
+
+            ws = new WebSocket(wsUrl);
+
+            ws.onopen = function () {
+              console.log("WebSocket connection established");
+
+              // Send connection request to the server
+              ws.send(
+                JSON.stringify({
+                  action: "connect",
+                  region: region,
+                  applicationId: applicationId,
+                  deviceId: deviceId,
+                  apiKey: apiKey,
+                })
+              );
+            };
+
+            ws.onmessage = function (event) {
+              try {
+                const data = JSON.parse(event.data);
+
+                if (data.type === "connection") {
+                  if (data.status === "connected") {
+                    statusIndicator.classList.add("connected");
+                    statusText.innerText = "Connected";
+                    connectButton.disabled = true;
+                    disconnectButton.disabled = false;
+                  } else {
+                    statusIndicator.classList.remove("connected");
+                    statusText.innerText = "Disconnected";
+                    connectButton.disabled = false;
+                    disconnectButton.disabled = true;
+                  }
+                }
+
+                if (data.type === "message" && data.payload) {
+                  console.log("Received data:", data.payload);
+
+                  // Update latest data display
+                  latestData.innerText = JSON.stringify(data.payload, null, 2);
+
+                  // Add to history
+                  addToMessageHistory(data.payload);
+                }
+
+                if (data.type === "error") {
+                  console.error("Server error:", data.message);
+                  statusText.innerText = "Error: " + data.message;
+                  statusIndicator.classList.remove("connected");
+                }
+              } catch (e) {
+                console.error("Error parsing WebSocket message:", e);
+              }
+            };
+
+            ws.onerror = function (error) {
+              console.error("WebSocket error:", error);
+              statusText.innerText = "Connection error";
+              statusIndicator.classList.remove("connected");
+            };
+
+            ws.onclose = function () {
+              console.log("WebSocket connection closed");
+              statusIndicator.classList.remove("connected");
+              statusText.innerText = "Disconnected";
+              connectButton.disabled = false;
+              disconnectButton.disabled = true;
+            };
+          } catch (e) {
+            console.error("Connection error:", e);
+            statusText.innerText = "Error: " + e.message;
+          }
+        }
+
+        function disconnect() {
+          if (ws && ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ action: "disconnect" }));
+          }
+        }
+
+        function addToMessageHistory(data) {
+          const now = new Date();
+          messageHistory.unshift({
+            timestamp: now,
+            data: data,
+          });
+
+          // Limit history size
+          if (messageHistory.length > MAX_MESSAGES) {
+            messageHistory.pop();
+          }
+
+          // Update UI
+          updateMessageHistoryUI();
+        }
+
+        function updateMessageHistoryUI() {
+          messageList.innerHTML = "";
+
+          messageHistory.forEach(function (msg) {
+            const msgElement = document.createElement("div");
+            msgElement.className = "message-item";
+
+            let deviceId = "unknown";
+            let received = msg.timestamp.toLocaleTimeString();
+
+            if (
+              msg.data &&
+              msg.data.end_device_ids &&
+              msg.data.end_device_ids.device_id
+            ) {
+              deviceId = msg.data.end_device_ids.device_id;
+            }
+
+            if (msg.data && msg.data.received_at) {
+              const receivedDate = new Date(msg.data.received_at);
+              received = receivedDate.toLocaleTimeString();
+            }
+
+            // Extract payload data if available
+            let payloadData = "No decoded payload";
+            if (
+              msg.data &&
+              msg.data.uplink_message &&
+              msg.data.uplink_message.decoded_payload
+            ) {
+              payloadData = JSON.stringify(
+                msg.data.uplink_message.decoded_payload
+              );
+            }
+
+            msgElement.innerHTML = `
+                        <div><strong>Device:</strong> ${deviceId}</div>
+                        <div><strong>Received:</strong> ${received}</div>
+                        <div><strong>Data:</strong> ${payloadData}</div>
+                        <div class="timestamp">Local time: ${msg.timestamp.toLocaleString()}</div>
+                    `;
+
+            messageList.appendChild(msgElement);
+          });
+        }
+      });
+    </script>
+  </body>
+</html>
