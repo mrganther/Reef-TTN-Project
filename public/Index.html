@@ -112,45 +112,12 @@
 
       <div class="connection-status">
         <div id="statusIndicator" class="status-indicator"></div>
-        <span id="statusText" class="status-text">Disconnected</span>
-      </div>
-
-      <div class="settings">
-        <div class="form-group">
-          <label for="region">TTN Region:</label>
-          <select id="region">
-            <option value="eu1">Europe 1 (eu1.cloud.thethings.network)</option>
-            <option value="nam1">
-              North America 1 (nam1.cloud.thethings.network)
-            </option>
-            <option value="au1">
-              Australia 1 (au1.cloud.thethings.network)
-            </option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label for="applicationId">Application ID:</label>
-          <input
-            type="text"
-            id="applicationId"
-            placeholder="your-application-id"
-          />
-        </div>
-        <div class="form-group">
-          <label for="deviceId">Device ID (optional):</label>
-          <input type="text" id="deviceId" placeholder="your-device-id" />
-        </div>
-        <div class="form-group">
-          <label for="apiKey">API Key:</label>
-          <input type="password" id="apiKey" placeholder="NNSXS.XXXXXXX" />
-        </div>
-        <button id="connectButton">Connect</button>
-        <button id="disconnectButton" disabled>Disconnect</button>
+        <span id="statusText" class="status-text">Connecting to TTN...</span>
       </div>
 
       <div class="data-container">
-        <h2>Latest Data</h2>
-        <pre id="latestData">No data received yet.</pre>
+        <!--<h2>Latest Data</h2>
+        <pre id="latestData">No data received yet.</pre>-->
 
         <h2>Message History</h2>
         <div id="messageList" class="message-list"></div>
@@ -161,32 +128,21 @@
       document.addEventListener("DOMContentLoaded", function () {
         const statusIndicator = document.getElementById("statusIndicator");
         const statusText = document.getElementById("statusText");
-        const connectButton = document.getElementById("connectButton");
-        const disconnectButton = document.getElementById("disconnectButton");
         const latestData = document.getElementById("latestData");
         const messageList = document.getElementById("messageList");
+        const reefDeviceName = "Reef Device 01";
 
         let ws = null;
         const messageHistory = [];
         const MAX_MESSAGES = 50;
 
-        connectButton.addEventListener("click", connect);
-        disconnectButton.addEventListener("click", disconnect);
+        // Connect immediately when page loads
+        connectWebSocket();
 
-        function connect() {
-          const region = document.getElementById("region").value;
-          const applicationId = document.getElementById("applicationId").value;
-          const deviceId = document.getElementById("deviceId").value;
-          const apiKey = document.getElementById("apiKey").value;
-
-          // Validate inputs
-          if (!applicationId || !apiKey) {
-            alert("Please provide Application ID and API Key");
-            return;
-          }
-
+        function connectWebSocket() {
           // Update UI to connecting state
           statusText.innerText = "Connecting...";
+          statusIndicator.classList.remove("connected");
 
           try {
             // Create WebSocket connection
@@ -198,17 +154,6 @@
 
             ws.onopen = function () {
               console.log("WebSocket connection established");
-
-              // Send connection request to the server
-              ws.send(
-                JSON.stringify({
-                  action: "connect",
-                  region: region,
-                  applicationId: applicationId,
-                  deviceId: deviceId,
-                  apiKey: apiKey,
-                })
-              );
             };
 
             ws.onmessage = function (event) {
@@ -218,14 +163,13 @@
                 if (data.type === "connection") {
                   if (data.status === "connected") {
                     statusIndicator.classList.add("connected");
-                    statusText.innerText = "Connected";
-                    connectButton.disabled = true;
-                    disconnectButton.disabled = false;
+                    statusText.innerText = "Connected to " + reefDeviceName;
                   } else {
                     statusIndicator.classList.remove("connected");
-                    statusText.innerText = "Disconnected";
-                    connectButton.disabled = false;
-                    disconnectButton.disabled = true;
+                    statusText.innerText =
+                      "Disconnected from " + reefDeviceName;
+                    // Try to reconnect after a delay
+                    setTimeout(connectWebSocket, 5000);
                   }
                 }
 
@@ -233,7 +177,7 @@
                   console.log("Received data:", data.payload);
 
                   // Update latest data display
-                  latestData.innerText = JSON.stringify(data.payload, null, 2);
+                  //latestData.innerText = JSON.stringify(data.payload, null, 2);
 
                   // Add to history
                   addToMessageHistory(data.payload);
@@ -259,21 +203,18 @@
               console.log("WebSocket connection closed");
               statusIndicator.classList.remove("connected");
               statusText.innerText = "Disconnected";
-              connectButton.disabled = false;
-              disconnectButton.disabled = true;
+              // Try to reconnect after a delay
+              setTimeout(connectWebSocket, 5000);
             };
           } catch (e) {
             console.error("Connection error:", e);
             statusText.innerText = "Error: " + e.message;
+            // Try to reconnect after a delay
+            setTimeout(connectWebSocket, 5000);
           }
         }
 
-        function disconnect() {
-          if (ws && ws.readyState === WebSocket.OPEN) {
-            ws.send(JSON.stringify({ action: "disconnect" }));
-          }
-        }
-
+        // Keep the message history functions unchanged...
         function addToMessageHistory(data) {
           const now = new Date();
           messageHistory.unshift({
@@ -334,6 +275,7 @@
 
             messageList.appendChild(msgElement);
           });
+          // Function content remains unchanged...
         }
       });
     </script>
