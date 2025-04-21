@@ -54,7 +54,7 @@ function createChart(config) {
             borderColor: config.borderColor,
             backgroundColor: config.backgroundColor,
             fill: true,
-            tension: 0.4,
+            tension: 0,
             pointRadius: 5,
             pointHoverRadius: 8,
           },
