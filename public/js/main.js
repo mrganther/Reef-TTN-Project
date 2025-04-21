@@ -1,7 +1,6 @@
 document.addEventListener("DOMContentLoaded", function () {
   const statusIndicator = document.getElementById("statusIndicator");
   const statusText = document.getElementById("statusText");
-  const latestData = document.getElementById("latestData");
   const messageList = document.getElementById("messageList");
   const reefDeviceName = "Reef Device 01";
 
@@ -15,7 +14,7 @@ document.addEventListener("DOMContentLoaded", function () {
   const timestamps = [];
 
   // Chart.js Setup
-  const ctx = document.getElementById("temperatureChart").getContext("2d");
+  const ctx = document.getElementById("temperatureChartOld").getContext("2d");
   const chart = new Chart(ctx, {
     type: "line",
     data: {
@@ -49,6 +48,8 @@ document.addEventListener("DOMContentLoaded", function () {
       plugins: { legend: { display: true } },
     },
   });
+
+  
   // Connect immediately when page loads
   connectWebSocket();
 
@@ -87,11 +88,11 @@ document.addEventListener("DOMContentLoaded", function () {
           if (data.type === "message" && data.payload) {
             console.log("Received data:", data.payload);
 
-            // Update latest data display
-            //latestData.innerText = JSON.stringify(data.payload, null, 2);
-
             // Add to history
             addToMessageHistory(data.payload);
+
+            // Update Chart data
+
           }
 
           if (data.type === "error") {
@@ -142,7 +143,7 @@ document.addEventListener("DOMContentLoaded", function () {
     updateMessageHistoryUI();
 
     // Update Temp Chart
-    updateTemperatureChart();
+    // updateTemperatureChart();
   }
 
   function updateMessageHistoryUI() {
@@ -186,12 +187,17 @@ document.addEventListener("DOMContentLoaded", function () {
                 `;
 
       messageList.appendChild(msgElement);
+
+
     });
+
+    updateAllCharts(messageHistory);
+
   }
 
-  function updateTemperatureChart() {
+  /*function updateTemperatureChart() {
     const newData = messageHistory.at(0);
-    const temperature = newData.data.uplink_message.decoded_payload.Temp; // Adjust based on your payload structure
+    const temperature = newData.data.uplink_message.decoded_payload.Temp; 
     const receivedAt = new Date(newData.data.received_at);
 
     // Add new data
@@ -208,5 +214,5 @@ document.addEventListener("DOMContentLoaded", function () {
     chart.data.labels = timestamps;
     chart.update();
     chart.data.datasets[0].data = temperatures;
-  }
+  }*/
 });
