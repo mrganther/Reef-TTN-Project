@@ -14,7 +14,7 @@ document.addEventListener("DOMContentLoaded", function () {
   const timestamps = [];
 
   // Chart.js Setup
-  const ctx = document.getElementById("temperatureChartOld").getContext("2d");
+  /*const ctx = document.getElementById("temperatureChartOld").getContext("2d");
   const chart = new Chart(ctx, {
     type: "line",
     data: {
@@ -47,9 +47,8 @@ document.addEventListener("DOMContentLoaded", function () {
       },
       plugins: { legend: { display: true } },
     },
-  });
+  });*/
 
-  
   // Connect immediately when page loads
   connectWebSocket();
 
@@ -92,7 +91,6 @@ document.addEventListener("DOMContentLoaded", function () {
             addToMessageHistory(data.payload);
 
             // Update Chart data
-
           }
 
           if (data.type === "error") {
@@ -187,12 +185,9 @@ document.addEventListener("DOMContentLoaded", function () {
                 `;
 
       messageList.appendChild(msgElement);
-
-
     });
 
     updateAllCharts(messageHistory);
-
   }
 
   /*function updateTemperatureChart() {
