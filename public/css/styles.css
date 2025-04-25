@@ -48,7 +48,6 @@ label {
   margin-bottom: 5px;
   font-weight: bold;
 }
-input,
 select {
   width: 100%;
   padding: 8px;
@@ -67,6 +66,28 @@ button {
 }
 button:hover {
   background-color: #005bab;
+}
+.controls {
+  margin-bottom: 20px;
+}
+.controls button {
+  background-color: #0070c9;
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  margin-right: 10px;
+}
+.controls button:hover {
+  background-color: #005bab;
+}
+.stats-display {
+  background-color: #f0f0f0;
+  padding: 15px;
+  border-radius: 5px;
+  margin-bottom: 20px;
 }
 .data-container {
   margin-top: 20px;
@@ -105,5 +126,5 @@ canvas {
 }
 
 chart-container {
-  padding: 10px;
+  padding: 30px;
 }

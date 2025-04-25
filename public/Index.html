@@ -16,14 +16,15 @@
         <span id="statusText" class="status-text">Connecting to TTN...</span>
       </div>
 
+      <div class="controls">
+        <button onclick="loadHistoricalData()">Load Last 2 Days</button>
+      </div>
+
       <div class="data-container">
         <h2>Message History</h2>
         <div id="messageList" class="message-list"></div>
       </div>
-      <!-- <div>
-        <h2>Temperature from TTN</h2>
-        <canvas id="temperatureChartOld"></canvas>
-      </div>-->
+
       <div class="newCharts">
         <div class="chart-container">
           <canvas id="temperatureChart"></canvas>

@@ -8,47 +8,6 @@ document.addEventListener("DOMContentLoaded", function () {
   const messageHistory = [];
   const MAX_MESSAGES = 50;
 
-  // Data storage
-  const maxDataPoints = 12;
-  const temperatures = [];
-  const timestamps = [];
-
-  // Chart.js Setup
-  /*const ctx = document.getElementById("temperatureChartOld").getContext("2d");
-  const chart = new Chart(ctx, {
-    type: "line",
-    data: {
-      labels: timestamps,
-      datasets: [
-        {
-          label: "Temperature (°C)",
-          data: temperatures,
-          borderColor: "#007bff",
-          backgroundColor: "rgba(0, 123, 255, 0.1)",
-          fill: true,
-          tension: 0.4,
-          pointRadius: 5,
-          pointHoverRadius: 8,
-        },
-      ],
-    },
-    options: {
-      responsive: true,
-      scales: {
-        xAxes: [
-          { display: true, scaleLabel: { display: true, labelString: "Time" } },
-        ],
-        yAxes: [
-          {
-            display: true,
-            scaleLabel: { display: true, labelString: "Temperature (°C)" },
-          },
-        ],
-      },
-      plugins: { legend: { display: true } },
-    },
-  });*/
-
   // Connect immediately when page loads
   connectWebSocket();
 
@@ -86,11 +45,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
           if (data.type === "message" && data.payload) {
             console.log("Received data:", data.payload);
-
             // Add to history
             addToMessageHistory(data.payload);
-
-            // Update Chart data
           }
 
           if (data.type === "error") {
@@ -124,8 +80,14 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 
-  // Keep the message history functions unchanged...
   function addToMessageHistory(data) {
+    // Check for duplicate based on received_at
+    const receivedAt = data.received_at;
+    if (messageHistory.some((msg) => msg.data.received_at === receivedAt)) {
+      console.log("Duplicate message ignored:", receivedAt);
+      return;
+    }
+
     const now = new Date();
     messageHistory.unshift({
       timestamp: now,
@@ -137,11 +99,10 @@ document.addEventListener("DOMContentLoaded", function () {
       messageHistory.pop();
     }
 
-    // Update UI
-    updateMessageHistoryUI();
+    // Sort by received_at to ensure chronological order
+    messageHistory.sort((a, b) => new Date(b.data.received_at) - new Date(a.data.received_at));
 
-    // Update Temp Chart
-    // updateTemperatureChart();
+    updateMessageHistoryUI();
   }
 
   function updateMessageHistoryUI() {
@@ -190,24 +151,25 @@ document.addEventListener("DOMContentLoaded", function () {
     updateAllCharts(messageHistory);
   }
 
-  /*function updateTemperatureChart() {
-    const newData = messageHistory.at(0);
-    const temperature = newData.data.uplink_message.decoded_payload.Temp; 
-    const receivedAt = new Date(newData.data.received_at);
+  window.loadHistoricalData = async function () {
+    try {
+      statusText.innerText = "Loading historical data...";
+      const response = await fetch("/api/historical");
+      if (!response.ok) throw new Error("Failed to fetch historical data");
+      const historicalData = await response.json();
 
-    // Add new data
-    temperatures.push(temperature);
-    timestamps.push(receivedAt.toLocaleTimeString());
+      // Clear existing messageHistory to avoid duplicates
+      messageHistory.length = 0;
 
-    // Limit data to maxDataPoints
-    if (temperatures.length > maxDataPoints) {
-      temperatures.shift();
-      timestamps.shift();
+      // Add historical data
+      historicalData.forEach((msg) => {
+        addToMessageHistory(msg);
+      });
+
+      statusText.innerText = "Connected to " + reefDeviceName;
+    } catch (error) {
+      console.error("Error loading historical data:", error);
+      statusText.innerText = "Error loading historical data";
     }
-
-    // Update chart
-    chart.data.labels = timestamps;
-    chart.update();
-    chart.data.datasets[0].data = temperatures;
-  }*/
+  };
 });
