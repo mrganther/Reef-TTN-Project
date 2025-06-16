@@ -8,48 +8,6 @@ document.addEventListener("DOMContentLoaded", function () {
   const messageHistory = [];
   const MAX_MESSAGES = 50;
 
-  // Data storage
-  const maxDataPoints = 12;
-  const temperatures = [];
-  const timestamps = [];
-
-  // Chart.js Setup
-  /*const ctx = document.getElementById("temperatureChartOld").getContext("2d");
-  const chart = new Chart(ctx, {
-    type: "line",
-    data: {
-      labels: timestamps,
-      datasets: [
-        {
-          label: "Temperature (°C)",
-          data: temperatures,
-          borderColor: "#007bff",
-          backgroundColor: "rgba(0, 123, 255, 0.1)",
-          fill: true,
-          tension: 0.4,
-          pointRadius: 5,
-          pointHoverRadius: 8,
-        },
-      ],
-    },
-    options: {
-      responsive: true,
-      scales: {
-        xAxes: [
-          { display: true, scaleLabel: { display: true, labelString: "Time" } },
-        ],
-        yAxes: [
-          {
-            display: true,
-            scaleLabel: { display: true, labelString: "Temperature (°C)" },
-          },
-        ],
-      },
-      plugins: { legend: { display: true } },
-    },
-  });*/
-
-  // Connect immediately when page loads
   connectWebSocket();
 
   function connectWebSocket() {
@@ -89,8 +47,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
             // Add to history
             addToMessageHistory(data.payload);
-
-            // Update Chart data
           }
 
           if (data.type === "error") {
@@ -124,7 +80,6 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 
-  // Keep the message history functions unchanged...
   function addToMessageHistory(data) {
     const now = new Date();
     messageHistory.unshift({
@@ -139,9 +94,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Update UI
     updateMessageHistoryUI();
-
-    // Update Temp Chart
-    // updateTemperatureChart();
   }
 
   function updateMessageHistoryUI() {
@@ -189,25 +141,4 @@ document.addEventListener("DOMContentLoaded", function () {
 
     updateAllCharts(messageHistory);
   }
-
-  /*function updateTemperatureChart() {
-    const newData = messageHistory.at(0);
-    const temperature = newData.data.uplink_message.decoded_payload.Temp; 
-    const receivedAt = new Date(newData.data.received_at);
-
-    // Add new data
-    temperatures.push(temperature);
-    timestamps.push(receivedAt.toLocaleTimeString());
-
-    // Limit data to maxDataPoints
-    if (temperatures.length > maxDataPoints) {
-      temperatures.shift();
-      timestamps.shift();
-    }
-
-    // Update chart
-    chart.data.labels = timestamps;
-    chart.update();
-    chart.data.datasets[0].data = temperatures;
-  }*/
 });

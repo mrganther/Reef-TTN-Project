@@ -87,7 +87,7 @@ const charts = chartConfigs.map((config) => createChart(config));
 
 function updateAllCharts(messageHistory) {
   const newData = messageHistory.at(0);
-  const newTemperature = newData.data.uplink_message.decoded_payload.tvoc;
+  const newTemperature = newData.data.uplink_message.decoded_payload.Temp;
   const newHumidity = newData.data.uplink_message.decoded_payload.Humidity;
   const newPressure = newData.data.uplink_message.decoded_payload.Pressure;
   const receivedAt = new Date(newData.data.received_at);
